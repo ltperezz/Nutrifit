@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nutri — diario de alimentación</title>
+<title>Nutrifit</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#1F6FEB"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--g:#1F6FEB;--gs:#E6EFFE;--bg:#F7F8F7;--tx:#202522;--t2:#727A75;--cd:#fff;--ln:#E4E8E5;--wr:#3B82C4;--rd:#C0463A;--sh:0 1px 3px rgba(32,37,34,.07);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -67,9 +67,9 @@ const MEALS=["Desayuno","Almuerzo","Merienda","Cena","Snacks"];
 const ACT=[["Sedentaria",1.2],["Ligeramente activa",1.375],["Moderadamente activa",1.55],["Muy activa",1.725],["Extremadamente activa",1.9]];
 const I={home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',plus:'<path d="M12 5v14M5 12h14"/>',chart:'<path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',drop:'<path d="M12 2.7s6 6.3 6 11a6 6 0 0 1-12 0c0-4.7 6-11 6-11z"/>',trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',l:'<path d="m15 18-6-6 6-6"/>',r:'<path d="m9 18 6-6-6-6"/>',copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',dumb:'<path d="M6 5v14M18 5v14M2 9v6M22 9v6M6 12h12"/>'};
 const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
-const K="nutri-v1";const D0=()=>({profile:null,log:[],water:[],custom:[],weights:[],recent:[],theme:"auto",routines:[],workouts:[],session:null});let S=D0();
+let K="nutri-v1";const D0=()=>({profile:null,log:[],water:[],custom:[],weights:[],recent:[],theme:"auto",routines:[],workouts:[],session:null});let S=D0();
 try{const r=localStorage.getItem(K);if(r)S={...S,...JSON.parse(r)}}catch(e){}
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(typeof queue==="function")queue()};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const nf=(n,d=0)=>Number(n).toLocaleString("es-AR",{maximumFractionDigits:d});
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -84,7 +84,8 @@ document.documentElement.dataset.theme=S.theme==="auto"?"":S.theme;
 if(!S.theme||S.theme==="auto")document.documentElement.removeAttribute("data-theme");
 const allFoods=()=>S.custom.concat(FOODS);
 const byId=id=>allFoods().find(f=>f.id===id);
-function tg(p){if(!p)return null;const bmr=10*p.w+6.25*p.h-5*p.a+(p.sx==="m"?5:p.sx==="f"?-161:-78);let k=bmr*ACT[p.ac][1];
+function tg(p){const t=tg0(p);if(!t)return t;const g=S.goals;return g?{...t,...g}:t}
+function tg0(p){if(!p)return null;const bmr=10*p.w+6.25*p.h-5*p.a+(p.sx==="m"?5:p.sx==="f"?-161:-78);let k=bmr*ACT[p.ac][1];
  if(p.a>=18){if(p.go==="lose")k*=.85;if(p.go==="gain")k*=1.1}
  k=Math.round(k/10)*10;const pr=Math.round(1.4*p.w),fa=Math.round(k*.3/9),ca=Math.max(0,Math.round((k-pr*4-fa*9)/4));return{k,p:pr,c:ca,f:fa,w:Math.round(p.w*35/50)*50}}
 const dayLog=d=>S.log.filter(e=>e.date===d);
@@ -123,7 +124,7 @@ function prof(){const p=S.profile,T=tg(p);return`<h1>Perfil</h1><div style="heig
  <button class="btn s" data-a="editp" style="margin-top:10px">Editar mis datos</button></div>
  <div class="card"><b>Objetivos orientativos</b><br><small>Estimados con la fórmula de Mifflin-St Jeor. No reemplazan la consulta con un profesional de la salud.</small><p>${nf(T.k)} kcal · P ${T.p} g · C ${T.c} g · G ${T.f} g · Agua ${nf(T.w)} ml</p>${p.a<18?'<small>Al ser menor de 18 años no se aplican déficits calóricos: priorizá comer lo suficiente y consultá con un profesional.</small>':""}</div>
  <div class="card"><label for="th" style="margin:0 0 4px">Tema</label><select id="th"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></div>
- <div class="card"><b>Copia de seguridad</b><br><small>Tus datos viven solo en este navegador: si borrás los datos del sitio o cambiás de dispositivo se pierden. Exportá una copia de vez en cuando. Incluye tus conversaciones con el coach.</small><div class="row" style="margin-top:10px"><button class="btn s" data-a="exp">Exportar</button><button class="btn s" data-a="impick">Importar</button></div><input type="file" id="imp" accept=".json,application/json" hidden></div><button class="btn s" data-a="myfoods">Mis alimentos creados (${S.custom.length})</button><div style="height:10px"></div>
+ ${cloudCard()}${goalsCard()}<div class="card"><b>Copia de seguridad</b><br><small>Tus datos viven solo en este navegador: si borrás los datos del sitio o cambiás de dispositivo se pierden. Exportá una copia de vez en cuando. Incluye tus conversaciones con el coach.</small><div class="row" style="margin-top:10px"><button class="btn s" data-a="exp">Exportar</button><button class="btn s" data-a="impick">Importar</button></div><input type="file" id="imp" accept=".json,application/json" hidden></div><button class="btn s" data-a="myfoods">Mis alimentos creados (${S.custom.length})</button><div style="height:10px"></div>
  <button class="btn s" style="color:var(--rd)" data-a="reset">Borrar todos mis datos</button>`}
 function onb(){const p=S.profile||{};return`<h1>Bienvenida</h1><p class="t2">Con esto calculamos tus objetivos orientativos. Todo queda guardado solo en tu dispositivo.</p><div class="card">
  <label for="nm">Nombre o apodo (opcional)</label><input id="nm" value="${esc(p.nm||"")}" maxlength="30">
@@ -139,7 +140,7 @@ function goals(){const a=num(document.getElementById("ag").value),sel=document.g
  if(a>=18)o=o.concat([["lose","Bajar de peso con prudencia"],["gain","Subir de peso con prudencia"]]);
  sel.innerHTML=o.map(x=>`<option value="${x[0]}"${x[0]===cur?" selected":""}>${x[1]}</option>`).join("");
  document.getElementById("gn").textContent=a<18&&a>0?"Para menores de 18 no se ofrecen objetivos de pérdida o aumento de peso. Consultá con un profesional de la salud.":a>=18?"Los objetivos de peso son orientativos; conviene consultarlos con un profesional.":""}
-function render(){const a=document.getElementById("app"),nav=document.getElementById("nav");
+function render(){const a=document.getElementById("app"),nav=document.getElementById("nav");if(V.gate||V.recov){nav.style.display="none";document.getElementById("ov").innerHTML="";a.innerHTML=V.recov?recovHtml():gateHtml();return}
  if(V.onb){a.innerHTML=onb();nav.style.display="none";goals();return}
  nav.style.display="";const tabs=[["home","Inicio","home"],["diary","Diario","book"],["add","Añadir","plus"],["gym","Entreno","dumb"],["prog","Progreso","chart"],["prof","Perfil","user"]];
  nav.innerHTML=tabs.map(t=>t[0]==="add"?`<button class="fab" data-a="add" data-m="${guess()}" aria-label="Añadir">${ic("plus")}</button>`:`<button data-a="tab" data-t="${t[0]}"${V.tab===t[0]?' aria-current="page"':""}>${ic(t[2])}${t[1]}</button>`).join("");
@@ -182,7 +183,7 @@ const acts={
   if(!a||a<5||a>100)return er.textContent="Ingresá una edad entre 5 y 100.";if(!h||h<90||h>230)return er.textContent="Ingresá una altura entre 90 y 230 cm.";if(!w||w<15||w>300)return er.textContent="Ingresá un peso entre 15 y 300 kg.";
   S.profile={nm:g("nm").trim(),a:Math.round(a),sx:g("sx"),h,w,ac:+g("ac"),go:g("go")};save();V.onb=false;V.tab="home";render()},
  editp(){V.onb=true;render()},
- reset(){if(!confirm("¿Borrar todos tus datos de este dispositivo? No se puede deshacer."))return;try{localStorage.removeItem(K)}catch(e){}S=D0();V={tab:"home",date:today(),sheet:null,onb:true};render()},
+ reset(){if(!confirm(U?"¿Borrar TODOS tus datos, también los de la nube? No se puede deshacer.":"¿Borrar todos tus datos de este dispositivo? No se puede deshacer."))return;try{localStorage.removeItem(K)}catch(e){}S=D0();V={tab:"home",date:today(),sheet:null,onb:true};if(U){save();flush()}render()},
  bk(d,e){if(e.target.classList.contains("bk")){V.sheet=null;render()}}};
 const EX=[["Sentadilla","Piernas","Barra"],["Prensa de piernas","Piernas","Máquina"],["Peso muerto rumano","Piernas","Barra"],["Zancadas","Piernas","Mancuernas"],["Curl femoral","Piernas","Máquina"],["Elevación de talones","Piernas","Máquina"],["Press de banca","Pecho","Barra"],["Press inclinado con mancuernas","Pecho","Mancuernas"],["Aperturas","Pecho","Mancuernas"],["Fondos","Pecho","Peso corporal"],["Press militar","Hombros","Barra"],["Elevaciones laterales","Hombros","Mancuernas"],["Dominadas","Espalda","Peso corporal"],["Remo con barra","Espalda","Barra"],["Jalón al pecho","Espalda","Polea"],["Remo en polea","Espalda","Polea"],["Curl de bíceps","Brazos","Mancuernas"],["Extensión de tríceps en polea","Brazos","Polea"],["Plancha","Core","Peso corporal"]].map((a,i)=>({id:"e"+i,n:a[0],g:a[1],q:a[2]}));
 let RT=0;setInterval(()=>{const el=document.getElementById("rt");if(!el)return;const r=Math.ceil((RT-Date.now())/1000);el.textContent=RT&&r>0?Math.floor(r/60)+":"+String(r%60).padStart(2,"0"):"Descanso";if(RT&&r<=0){RT=0;try{navigator.vibrate(300)}catch(e){}}},500);
@@ -244,7 +245,7 @@ Object.assign(acts,{cnew(){CO().cur=null;save();render()},cset(){V.sheet={g:"coa
  cdel(){const c=CO();c.chats=c.chats.filter(x=>x.id!==c.cur);c.cur=null;save();V.sheet=null;render();toast("Conversación borrada")},
  calldel(){if(confirm("¿Borrar todas las conversaciones con el coach?")){const c=CO();c.chats=[];c.cur=null;save();V.sheet=null;render()}},
  cmadd(){const v=document.getElementById("cmn").value.trim();if(!v)return;CO().mem.push({id:uid(),t:v});save();render()},cmdel(d){const c=CO();c.mem=c.mem.filter(m=>m.id!==d.id);save();render()},
- async exp(){const dl=window.claude?await window.claude.use("downloads"):null;if(!dl)return toast("Exportar solo está disponible abriendo la app desde claude.ai");try{await dl.save({filename:"nutri-copia-"+today()+".json",data:JSON.stringify(S)})}catch(e){if(!e||e.code!=="declined")toast("No se pudo exportar")}},
+ async exp(){const dl=window.claude?await window.claude.use("downloads"):null;if(!dl){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:"application/json"}));a.download="nutri-copia-"+today()+".json";a.click();return}try{await dl.save({filename:"nutri-copia-"+today()+".json",data:JSON.stringify(S)})}catch(e){if(!e||e.code!=="declined")toast("No se pudo exportar")}},
  impick(){document.getElementById("imp").click()}});
 document.addEventListener("change",e=>{const t=e.target;if(t.dataset.ck){const c=CO();if(t.dataset.ck==="hist")c.hist=t.checked?1:0;else c.cats[t.dataset.ck]=t.checked?1:0;save()}
  if(t.id==="csel"){CO().cur=t.value;save();render()}
@@ -253,5 +254,76 @@ document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="cin")
 document.addEventListener("click",e=>{const el=e.target.closest("[data-a]");if(!el)return;const a=acts[el.dataset.a];a&&a(el.dataset,e)});
 document.addEventListener("input",e=>{const i=e.target.id;if(i==="q"||i==="u")pv();if(i==="s")res();if(i==="ag")goals()});
 document.addEventListener("change",e=>{if(e.target.id==="th"){S.theme=e.target.value;save();const r=document.documentElement;S.theme==="auto"?r.removeAttribute("data-theme"):r.dataset.theme=S.theme}});
-render();
+/* ===== NUTRIFIT: cuentas y nube (Supabase) ===== */
+const CFG={URL:"TU_URL_DE_SUPABASE",KEY:"TU_CLAVE_ANON_PUBLICA",APP_URL:"https://TU-USUARIO.github.io/TU-REPO/"};
+const cfgOK=()=>/^https:\/\/[a-z0-9]+\.supabase\.co/.test(CFG.URL)&&CFG.KEY.length>20&&!CFG.KEY.includes("TU_");
+const cloudOn=()=>cfgOK()&&!!window.supabase;
+let U=null,SB=null,SY={st:"idle",msg:""},base=null,PB=false,QT=0;
+const dk=()=>"nutri-dirty-"+U.id;
+function sy(st,msg){SY={st,msg};const t={ok:"Guardado en la nube",sync:"Sincronizando…",pend:"Cambios pendientes…",err:msg}[st]||msg||"";SY.msg=t;
+ let p=document.getElementById("syp");if(!p){p=document.createElement("div");p.id="syp";p.setAttribute("role","status");p.style.cssText="position:fixed;top:calc(6px + env(safe-area-inset-top,0px));right:8px;z-index:4;font-size:.72rem;padding:3px 9px;border-radius:99px;background:var(--cd);border:1px solid var(--ln);color:var(--t2)";document.body.appendChild(p)}
+ p.style.display=U?"":"none";p.textContent=st==="ok"?"Sincronizado":st==="sync"?"Sincronizando…":st==="pend"?"Pendiente":"Sin sincronizar";p.title=t;const e=document.getElementById("sy");if(e)e.textContent=t}
+function queue(){if(!U)return;try{localStorage.setItem(dk(),"1")}catch(e){}sy("pend");clearTimeout(QT);QT=setTimeout(()=>push(),1500)}
+async function flush(){clearTimeout(QT);if(U&&localStorage.getItem(dk()))await push()}
+async function pull(){const{data,error}=await SB.from("user_data").select("data,updated_at").eq("user_id",U.id).maybeSingle();if(error)throw error;return data}
+function backup(d){try{localStorage.setItem("nutri-conflict-"+U.id+"-"+Date.now(),JSON.stringify(d))}catch(e){}}
+function adopt(r){S={...D0(),...r.data};base=r.updated_at;try{localStorage.setItem(K,JSON.stringify(S));localStorage.removeItem(dk())}catch(e){}sy("ok")}
+async function push(force){if(!U||PB)return;PB=true;sy("sync");const uid=U.id,snap=JSON.stringify(S);let ok=true,nb=null;
+ try{if(base===null){const{data,error}=await SB.from("user_data").insert({user_id:uid,data:JSON.parse(snap)}).select("updated_at").single();if(error){if(error.code==="23505")ok=false;else throw error}else nb=data.updated_at}
+ else{let q=SB.from("user_data").update({data:JSON.parse(snap)}).eq("user_id",uid);if(!force)q=q.eq("updated_at",base);const{data,error}=await q.select("updated_at");if(error)throw error;if(data.length)nb=data[0].updated_at;else ok=false}
+ if(ok){base=nb;if(JSON.stringify(S)===snap){localStorage.removeItem(dk());sy("ok")}else queue()}
+ else{PB=false;await conflict();return}}
+ catch(e){sy("err",navigator.onLine?"Error al guardar en la nube. Reintentamos solos.":"Sin conexión: tus cambios están guardados en este dispositivo y se envían al volver.");setTimeout(queue,15000)}
+ PB=false}
+async function conflict(){try{const r=await pull();if(!r){base=null;return push()}
+ if(confirm("Hay datos más nuevos en la nube (otro dispositivo). Aceptar = usar los de la nube (tu versión de este dispositivo queda guardada como copia). Cancelar = reemplazar la nube con los de este dispositivo.")){backup(S);adopt(r);V.onb=!S.profile;render()}else{base=r.updated_at;await push(true)}}
+ catch(e){sy("err","No se pudo resolver el conflicto. Reintentá más tarde.")}}
+const hasData=d=>!!(d&&(d.profile||(d.log&&d.log.length)||(d.workouts&&d.workouts.length)||(d.weights&&d.weights.length)||(d.custom&&d.custom.length)));
+const summ=d=>(d.log||[]).length+" registros de comida, "+(d.workouts||[]).length+" entrenamientos, "+(d.weights||[]).length+" pesos";
+async function onUser(u){if(U&&U.id===u.id)return;U=u;K="nutri-u-"+u.id;base=null;V.gate=false;V.load=0;localStorage.removeItem("nutri-mode-local");
+ let loc=null;try{loc=JSON.parse(localStorage.getItem(K))}catch(e){}S={...D0(),...(loc||{})};V.onb=false;sy("sync");render();
+ try{const r=await pull();
+  if(r){if(loc&&localStorage.getItem(dk())){if(confirm("Tenés cambios de este dispositivo sin sincronizar y también hay datos en la nube. Aceptar = usar los de la nube (tus cambios quedan en una copia local). Cancelar = enviar los de este dispositivo.")){backup(loc);adopt(r)}else{base=r.updated_at;await push(true)}}else adopt(r)}
+  else{let anon=null;try{anon=JSON.parse(localStorage.getItem("nutri-v1"))}catch(e){}
+   if(hasData(loc)){await push()}
+   else if(hasData(anon)&&confirm("Encontramos datos guardados en este dispositivo sin cuenta ("+summ(anon)+"). ¿Querés importarlos a tu cuenta? Tus datos locales NO se borran.")){S={...D0(),...anon};try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}await push();const v=await pull();toast(v&&v.data.log.length===S.log.length?"Importación verificada: "+summ(S):"No pudimos verificar la importación. Tus datos locales siguen intactos.")}
+   else{S=D0();await push()}}
+ }catch(e){sy("err","No se pudo conectar. Trabajás con la copia de este dispositivo y se sincroniza al volver la conexión.")}
+ V.onb=!S.profile;render()}
+function onOut(){clearTimeout(QT);U=null;base=null;K="nutri-none";S=D0();window._undo=null;document.getElementById("toast").innerHTML="";document.getElementById("ov").innerHTML="";V={tab:"home",date:today(),sheet:null,onb:false,gate:true,load:0};sy("idle");render()}
+const em=()=>(document.getElementById("ae")||{value:""}).value.trim(),pw=()=>(document.getElementById("ap")||{value:""}).value;
+const aerr=m=>{const e=document.getElementById("aerr");if(e)e.textContent=m};
+const busy=b=>document.querySelectorAll("#app button").forEach(x=>x.disabled=b);
+const AMSG=e=>{const m=String(e&&e.message||"").toLowerCase();return m.includes("invalid login")?"Correo o contraseña incorrectos.":m.includes("not confirmed")?"Confirmá tu correo desde el mensaje que te enviamos.":m.includes("already")?"Ese correo ya tiene una cuenta.":m.includes("password")?"La contraseña debe tener al menos 6 caracteres.":m.includes("rate")?"Demasiados intentos. Esperá un momento.":!navigator.onLine?"Sin conexión.":"No se pudo completar la operación."};
+const badMail=()=>{if(!em().includes("@")){aerr("Ingresá un correo válido.");return 1}};
+function gateHtml(){return`<div style="padding-top:36px;text-align:center"><h1 style="font-size:2rem;color:var(--g)">Nutrifit</h1><p class="t2">Tu diario de alimentación y entrenamiento. Iniciá sesión para guardar tus datos en la nube y verlos en todos tus dispositivos.</p>${V.load?'<p role="status">Cargando…</p>':V.nolib?'<div class="card err">No se pudo cargar el servicio de cuentas (¿sin conexión?).</div>':`<div class="card" style="text-align:left"><button class="btn" data-a="aglog">Continuar con Google</button><label for="ae">Correo electrónico</label><input id="ae" type="email" autocomplete="email"><label for="ap">Contraseña</label><input id="ap" type="password" autocomplete="current-password"><div id="aerr" class="err" role="alert"></div><div class="row" style="margin-top:12px"><button class="btn s grow" data-a="ain">Ingresar</button><button class="btn s grow" data-a="asignup">Crear cuenta</button></div><button class="t2" style="margin-top:12px;text-decoration:underline" data-a="areset">Olvidé mi contraseña</button></div>`}<button class="t2" style="text-decoration:underline;margin-top:8px" data-a="alocal">Usar sin cuenta (solo en este dispositivo)</button></div>`}
+function recovHtml(){return`<div style="padding-top:36px"><h1>Nueva contraseña</h1><div class="card"><label for="np">Elegí una contraseña nueva</label><input id="np" type="password" autocomplete="new-password"><div id="aerr" class="err" role="alert"></div><button class="btn" style="margin-top:12px" data-a="asetpw">Guardar</button></div></div>`}
+const shareCard=()=>`<div class="card"><b>Compartir Nutrifit</b><br><small>Se comparte solo el enlace de la app, nunca tus datos. Cada persona usa su propia cuenta.</small><button class="btn s" style="margin-top:10px" data-a="share">Compartir Nutrifit</button></div>`;
+function cloudCard(){if(!cfgOK())return`<div class="card"><b>Cuenta y nube</b><br><small>Todavía no está configurada: tus datos se guardan solo en este dispositivo. Seguí el archivo LEEME.md.</small></div>`+shareCard();
+ return`<div class="card"><b>Cuenta y nube</b><br>${U?`<small>${esc(U.email||"Sesión iniciada")}</small><div id="sy" role="status" style="margin:8px 0">${esc(SY.msg||"")}</div><div class="row"><button class="btn s w grow" data-a="sync">Sincronizar ahora</button><button class="btn s w grow" data-a="asignout">Cerrar sesión</button></div>`:`<small>Estás usando la app sin cuenta: tus datos quedan solo en este dispositivo.</small><button class="btn s" style="margin-top:10px" data-a="alogin">Iniciar sesión o crear cuenta</button>`}</div>`+shareCard()}
+function goalsCard(){const p=S.profile,T=tg(p),g=S.goals;return`<div class="card"><b>Mis objetivos nutricionales</b><br><small>${g?"Usando tus valores manuales.":"Usando el cálculo orientativo automático."} Son estimaciones, no prescripciones médicas${p.a<18?"; al ser menor de 18 años conviene definirlos con un profesional de la salud":""}. Cambiarlos no modifica lo que ya registraste.</small><div class="grid3" style="margin-top:6px">${[["k","kcal"],["p","Prot. g"],["c","Carb. g"],["f","Grasas g"],["w","Agua ml"]].map(x=>`<div><label for="go-${x[0]}">${x[1]}</label><input id="go-${x[0]}" inputmode="decimal" value="${T[x[0]]}"></div>`).join("")}</div><div id="goerr" class="err" role="alert"></div><div class="row" style="margin-top:10px"><button class="btn w grow" data-a="gosave">Guardar</button><button class="btn s w grow" data-a="goreset">Volver al automático</button></div></div>`}
+Object.assign(acts,{
+ async aglog(){busy(1);const{error}=await SB.auth.signInWithOAuth({provider:"google",options:{redirectTo:CFG.APP_URL}});if(error){busy(0);aerr("No se pudo iniciar con Google. Verificá que el proveedor esté habilitado.")}},
+ async ain(){if(badMail())return;if(!pw())return aerr("Ingresá tu contraseña.");busy(1);const{error}=await SB.auth.signInWithPassword({email:em(),password:pw()});busy(0);if(error)aerr(AMSG(error))},
+ async asignup(){if(badMail())return;if(pw().length<6)return aerr("La contraseña debe tener al menos 6 caracteres.");busy(1);const{data,error}=await SB.auth.signUp({email:em(),password:pw(),options:{emailRedirectTo:CFG.APP_URL}});busy(0);if(error)aerr(AMSG(error));else if(!data.session)aerr("Te enviamos un correo para confirmar tu cuenta. Después ingresá.")},
+ async areset(){if(badMail())return;busy(1);const{error}=await SB.auth.resetPasswordForEmail(em(),{redirectTo:CFG.APP_URL});busy(0);aerr(error?AMSG(error):"Si el correo existe, te enviamos un enlace para restablecer la contraseña.")},
+ async asetpw(){const v=document.getElementById("np").value;if(v.length<6)return aerr("Mínimo 6 caracteres.");busy(1);const{error}=await SB.auth.updateUser({password:v});busy(0);if(error)aerr(AMSG(error));else{V.recov=false;render();toast("Contraseña actualizada")}},
+ alocal(){localStorage.setItem("nutri-mode-local","1");K="nutri-v1";try{S={...D0(),...JSON.parse(localStorage.getItem(K))}}catch(e){S=D0()}V.gate=false;V.load=0;V.onb=!S.profile;render()},
+ alogin(){K="nutri-none";S=D0();localStorage.removeItem("nutri-mode-local");V={tab:"home",date:today(),sheet:null,onb:false,gate:true,load:0};render()},
+ async asignout(){await flush();if(localStorage.getItem(dk())&&!confirm("Hay cambios sin sincronizar que quedan solo en este dispositivo. ¿Cerrar sesión igual?"))return;await SB.auth.signOut()},
+ async sync(){if(U){queue();await flush()}},
+ gosave(){const g={},er=document.getElementById("goerr");for(const[k,mx]of[["k",10000],["p",1000],["c",1500],["f",1000],["w",10000]]){const v=num(document.getElementById("go-"+k).value);if(v==null||v<=0||v>mx)return er.textContent="Revisá los valores: deben ser números mayores a 0 y razonables.";g[k]=Math.round(v)}S.goals=g;save();render();toast("Objetivos guardados")},
+ goreset(){delete S.goals;save();render();toast("Volviste al cálculo automático")},
+ async share(){const url=cfgOK()&&!CFG.APP_URL.includes("TU-")?CFG.APP_URL:location.href.split("#")[0];try{if(navigator.share){await navigator.share({title:"Nutrifit",text:"Probá Nutrifit, mi app de nutrición y entrenamiento.",url});return}}catch(e){if(e&&e.name==="AbortError")return}try{await navigator.clipboard.writeText(url);toast("Enlace copiado")}catch(e){toast("Copiá este enlace: "+url)}}});
+document.addEventListener("visibilitychange",async()=>{if(document.visibilityState==="visible"&&U&&!PB&&!localStorage.getItem(dk())){try{const r=await pull();if(r&&r.updated_at!==base){adopt(r);V.onb=!S.profile;render()}}catch(e){}}});
+function boot(){const local=localStorage.getItem("nutri-mode-local")==="1";
+ if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+ if(!cfgOK()){render();return}
+ if(!local){K="nutri-none";S=D0();V.onb=false;V.gate=true;V.load=1}
+ if(!window.supabase){V.nolib=1;V.load=0;render();return}
+ SB=supabase.createClient(CFG.URL,CFG.KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ SB.auth.onAuthStateChange((ev,ses)=>{setTimeout(()=>{if(ev==="PASSWORD_RECOVERY"){V.recov=true;V.load=0;render();return}
+  if(ses&&ses.user)onUser(ses.user);else if(ev==="SIGNED_OUT")onOut();else if(ev==="INITIAL_SESSION"&&V.gate){V.load=0;render()}},0)});
+ addEventListener("online",queue);render()}
+boot();
 </script></body></html>
