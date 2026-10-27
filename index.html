@@ -43,6 +43,11 @@ label{display:block;font-size:.85rem;color:var(--t2);margin:10px 0 4px}
 .bars div{flex:1;background:var(--g);border-radius:6px 6px 0 0;min-height:2px}
 .lbl{display:flex;gap:8px}.lbl span{flex:1;text-align:center;font-size:.72rem;color:var(--t2)}
 .empty{text-align:center;padding:26px 10px;color:var(--t2)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}.cal .wd{font-size:.72rem;color:var(--t2);padding:4px 0}
+.cd{min-height:46px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.9rem;border:1px solid transparent;min-width:0}
+.cd.nd{color:var(--t2);border:1px dashed var(--ln)}.cd.fu{color:var(--t2);opacity:.55}.cd.td{border-color:var(--g);font-weight:700;color:var(--g)}.cd.sel{background:var(--gs)}.cd.pop{animation:pop .18s ease-out}
+.dots{display:flex;gap:4px;height:8px;align-items:center}.dg{width:8px;height:8px;border-radius:50%;background:#2EAD6B}.dr{width:6px;height:6px;border-radius:50%;background:#E5322D}
+.cal.l{animation:cl .2s ease-out}.cal.r{animation:cr .2s ease-out}@keyframes cl{from{opacity:.3;transform:translateX(-14px)}}@keyframes cr{from{opacity:.3;transform:translateX(14px)}}@keyframes pop{50%{transform:scale(1.08)}}
 </style></head><body>
 <main id="app"></main>
 <nav class="nav" id="nav" aria-label="Principal"></nav>
@@ -115,7 +120,7 @@ function prog(){const T=tg(S.profile),days=[...Array(7)].map((_,i)=>shift(today(
  const avg=f=>logged.length?Math.round(logged.reduce((a,d)=>a+tot(d)[f],0)/logged.length):0;
  const freq={};S.log.forEach(e=>freq[e.name]=(freq[e.name]||0)+1);const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,5);
  const ws=[...S.weights].sort((a,b)=>b.date<a.date?-1:1).slice(-6);
- return`<h1>Progreso</h1><h2>Últimos 7 días (kcal)</h2><div class="card"><div class="bars" role="img" aria-label="Energía por día">${ks.map(k=>`<div style="height:${k/mx*100}%" title="${k} kcal"></div>`).join("")}<span style="position:absolute;left:0;right:0;bottom:${T.k/mx*100}%;border-top:1px dashed var(--t2)"></span></div><div class="lbl">${days.map(d=>`<span>${d.slice(8)}/${d.slice(5,7)}</span>`).join("")}</div></div>
+ return`<h1>Progreso</h1>${calHtml()}<h2>Últimos 7 días (kcal)</h2><div class="card"><div class="bars" role="img" aria-label="Energía por día">${ks.map(k=>`<div style="height:${k/mx*100}%" title="${k} kcal"></div>`).join("")}<span style="position:absolute;left:0;right:0;bottom:${T.k/mx*100}%;border-top:1px dashed var(--t2)"></span></div><div class="lbl">${days.map(d=>`<span>${d.slice(8)}/${d.slice(5,7)}</span>`).join("")}</div></div>
  <div class="grid3"><div class="card"><small>Promedio</small><br><b>${nf(avg("k"))}</b> kcal</div><div class="card"><small>Días con registro</small><br><b>${logged.length}</b> de 7</div><div class="card"><small>Agua prom.</small><br><b>${nf(days.reduce((a,d)=>a+waterOf(d),0)/7)}</b> ml</div></div>
  <div class="card"><small>Promedio diario en días registrados</small><br>Proteínas <b>${avg("p")} g</b> · Carbohidratos <b>${avg("c")} g</b> · Grasas <b>${avg("f")} g</b></div>
  <h2>Más frecuentes</h2><div class="card">${top.length?top.map(t=>`<div class="row sp"><span>${esc(t[0])}</span><small>${t[1]} veces</small></div>`).join(""):'<small>Registrá comidas para ver tus alimentos más usados.</small>'}</div>
@@ -268,6 +273,23 @@ async function loadDB(){try{const J=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return
  if(V.sheet&&V.sheet.mode==="search")renderSheet()}
 document.addEventListener("change",e=>{const i=e.target.id;if(i==="fcat"){V.fcat=e.target.value;res()}if(i==="xg"||i==="xe")xres()});
 document.addEventListener("input",e=>{const i=e.target.id;if(i==="xq")xres();if(i==="rq"){const q=norm(e.target.value);document.querySelectorAll("#ov label[style*='flex']").forEach(l=>l.style.display=norm(l.textContent).includes(q)?"flex":"none")}});
+/* ===== NUTRIFIT: calendario de progreso ===== */
+const CAL_TOL=150;
+function calInfo(ds){const T=tg(S.profile),fu=ds>today(),es=dayLog(ds),k=es.reduce((a,e)=>a+e.k,0),goal=T?T.k:null,w=(S.workouts||[]).filter(x=>x.date===ds);
+ const st=fu?"future":(!es.length||goal==null)?"none":Math.abs(Math.round(k)-goal)<=CAL_TOL?"ok":"out";
+ return{ds,fu,k,goal,st,n:es.length,train:!fu&&w.length>0,tw:fu?[]:w}}
+function calPanel(C){if(!C.sel)return'<div class="t2" style="margin-top:10px;font-size:.85rem">Tocá un día para ver el detalle.</div>';const I=calInfo(C.sel),[y,m,d]=C.sel.split("-").map(Number),
+ fl=new Date(y,m-1,d).toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ if(I.fu)return`<div class="card" style="margin:10px 0 0"><b style="text-transform:capitalize">${fl}</b><br><small>Día futuro: todavía no hay datos.</small></div>`;
+ const df=I.goal==null?null:Math.round(I.k)-I.goal,stx=I.st==="ok"?"Objetivo cumplido":I.st==="out"?"Fuera del rango":"Sin datos";
+ return`<div class="card" style="margin:10px 0 0" aria-live="polite"><b style="text-transform:capitalize">${fl}</b>${C.sel===today()?"<br><small>Hoy todavía puede cambiar.</small>":""}<div style="margin-top:6px">Consumido: <b>${I.n?nf(I.k)+" kcal":"sin registros"}</b><br>Objetivo: <b>${I.goal==null?"sin configurar":nf(I.goal)+" kcal"}</b><br>${I.n&&df!=null?"Diferencia: <b>"+(df>0?"+":"")+nf(df)+" kcal</b><br>":""}Estado: <b>${stx}</b><br>Gimnasio: <b>${I.train?"entrenamiento registrado"+(I.tw.length?" ("+esc(I.tw.map(w=>w.name).join(", "))+")":""):"sin entrenamiento registrado"}</b></div></div>`}
+function calHtml(){const C=V.cal=V.cal||(()=>{const n=new Date();return{y:n.getFullYear(),m:n.getMonth(),sel:null}})();
+ const first=new Date(C.y,C.m,1),off=(first.getDay()+6)%7,nd=new Date(C.y,C.m+1,0).getDate(),td=today(),an=C.an||"",pop=C.pop;C.an="";C.pop=0;
+ const title=first.toLocaleDateString("es-AR",{month:"long",year:"numeric"});let cells="";for(let i=0;i<off;i++)cells+="<span></span>";
+ for(let d=1;d<=nd;d++){const dt=new Date(C.y,C.m,d),ds=iso(dt),I=calInfo(ds),lab=dt.toLocaleDateString("es-AR",{weekday:"long",day:"numeric",month:"long"})+": "+(I.fu?"día futuro":I.st==="ok"?"objetivo calórico cumplido":I.st==="out"?"fuera del rango":"sin datos")+(I.train?", entrenamiento registrado":"");
+  cells+=`<button class="cd${ds===td?" td":""}${I.st==="none"?" nd":""}${I.fu?" fu":""}${C.sel===ds?" sel":""}${pop&&C.sel===ds?" pop":""}" data-a="calsel" data-d="${ds}" aria-label="${esc(lab)}"${ds===td?' aria-current="date"':""}><span>${d}</span><span class="dots">${I.st==="ok"?'<i class="dg"></i>':""}${I.train?'<i class="dr"></i>':""}</span></button>`}
+ return`<h2 style="margin-top:14px">Calendario de progreso</h2><div class="card"><div class="row sp"><button class="ib" data-a="calnav" data-n="-1" aria-label="Mes anterior">${ic("l")}</button><b style="text-transform:capitalize">${title}</b><button class="ib" data-a="calnav" data-n="1" aria-label="Mes siguiente">${ic("r")}</button></div><div class="cal ${an}" style="margin-top:8px">${["L","M","M","J","V","S","D"].map(x=>`<span class="wd">${x}</span>`).join("")}${cells}</div>${calPanel(C)}<div style="margin-top:12px"><small><i class="dg" style="display:inline-block;vertical-align:middle"></i> Objetivo calórico cumplido (±${CAL_TOL} kcal) · <i class="dr" style="display:inline-block;vertical-align:middle"></i> Entrenamiento de gimnasio registrado</small><br><small>Borde punteado = sin datos de comidas (no es un incumplimiento). Con datos y sin círculo verde = fuera del rango. Se usa tu objetivo calórico actual: la app no guarda el historial de objetivos.</small></div><button class="btn s" style="margin-top:10px" data-a="caltoday">Ir a hoy</button></div>`}
+Object.assign(acts,{calnav(d){const C=V.cal,x=new Date(C.y,C.m+ +d.n,1);C.y=x.getFullYear();C.m=x.getMonth();C.an=+d.n>0?"r":"l";render()},calsel(d){V.cal.sel=d.d;V.cal.pop=1;render()},caltoday(){const n=new Date();V.cal={y:n.getFullYear(),m:n.getMonth(),sel:today(),pop:1,an:"r"};render()}});
 /* ===== NUTRIFIT: cuentas y nube (Supabase) ===== */
 const CFG={URL:"TU_URL_DE_SUPABASE",KEY:"TU_CLAVE_ANON_PUBLICA",APP_URL:"https://TU-USUARIO.github.io/TU-REPO/"};
 const cfgOK=()=>/^https:\/\/[a-z0-9]+\.supabase\.co/.test(CFG.URL)&&CFG.KEY.length>20&&!CFG.KEY.includes("TU_");
