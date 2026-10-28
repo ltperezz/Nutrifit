@@ -147,7 +147,7 @@ function goals(){const a=num(document.getElementById("ag").value),sel=document.g
  sel.innerHTML=o.map(x=>`<option value="${x[0]}"${x[0]===cur?" selected":""}>${x[1]}</option>`).join("");
  document.getElementById("gn").textContent=a<18&&a>0?"Para menores de 18 no se ofrecen objetivos de pérdida o aumento de peso. Consultá con un profesional de la salud.":a>=18?"Los objetivos de peso son orientativos; conviene consultarlos con un profesional.":""}
 function render(){const a=document.getElementById("app"),nav=document.getElementById("nav");if(V.gate||V.recov){nav.style.display="none";document.getElementById("ov").innerHTML="";a.innerHTML=V.recov?recovHtml():gateHtml();return}
- if(V.onb){a.innerHTML=onb();nav.style.display="none";goals();return}
+ if(V.onb||!S.profile){V.onb=true;a.innerHTML=onb();nav.style.display="none";goals();return}
  nav.style.display="";const tabs=[["home","Inicio","home"],["diary","Diario","book"],["add","Añadir","plus"],["gym","Entreno","dumb"],["prog","Progreso","chart"],["prof","Perfil","user"]];
  nav.innerHTML=tabs.map(t=>t[0]==="add"?`<button class="fab" data-a="add" data-m="${guess()}" aria-label="Añadir">${ic("plus")}</button>`:`<button data-a="tab" data-t="${t[0]}"${V.tab===t[0]?' aria-current="page"':""}>${ic(t[2])}${t[1]}</button>`).join("");
  a.innerHTML={home,diary,gym,prog,prof,coach}[V.tab]();const th=document.getElementById("th");if(th)th.value=S.theme||"auto";renderSheet()}
@@ -305,6 +305,16 @@ async function pull(){const{data,error}=await SB.from("user_data").select("data,
 function backup(d){try{localStorage.setItem("nutri-conflict-"+U.id+"-"+Date.now(),JSON.stringify(d))}catch(e){}}
 function adopt(r){S={...D0(),...r.data};base=r.updated_at;try{localStorage.setItem(K,JSON.stringify(S));localStorage.removeItem(dk())}catch(e){}sy("ok")}
 async function push(force){if(!U||PB)return;PB=true;sy("sync");const uid=U.id,snap=JSON.stringify(S);let ok=true,nb=null;
+324
+325
+326
+327
+328
+329
+330
+331
+332
+
  try{if(base===null){const{data,error}=await SB.from("user_data").insert({user_id:uid,data:JSON.parse(snap)}).select("updated_at").single();if(error){if(error.code==="23505")ok=false;else throw error}else nb=data.updated_at}
  else{let q=SB.from("user_data").update({data:JSON.parse(snap)}).eq("user_id",uid);if(!force)q=q.eq("updated_at",base);const{data,error}=await q.select("updated_at");if(error)throw error;if(data.length)nb=data[0].updated_at;else ok=false}
  if(ok){base=nb;if(JSON.stringify(S)===snap){localStorage.removeItem(dk());sy("ok")}else queue()}
