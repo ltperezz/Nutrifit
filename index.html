@@ -48,7 +48,7 @@ label{display:block;font-size:.85rem;color:var(--t2);margin:10px 0 4px}
 .cd.nd{color:var(--t2);border:1px dashed var(--ln)}.cd.fu{color:var(--t2);opacity:.55}.cd.td{border-color:var(--g);font-weight:700;color:var(--g)}.cd.sel{background:var(--gs)}.cd.pop{animation:pop .18s ease-out}
 .dots{display:flex;gap:4px;height:8px;align-items:center}.dg{width:8px;height:8px;border-radius:50%;background:#2EAD6B}.dr{width:6px;height:6px;border-radius:50%;background:#E5322D}
 .cal.l{animation:cl .2s ease-out}.cal.r{animation:cr .2s ease-out}@keyframes cl{from{opacity:.3;transform:translateX(-14px)}}@keyframes cr{from{opacity:.3;transform:translateX(14px)}}@keyframes pop{50%{transform:scale(1.08)}}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body>
+</style></head><body>
 <main id="app"></main>
 <nav class="nav" id="nav" aria-label="Principal"></nav>
 <div id="ov"></div><div id="toast"></div>
@@ -88,7 +88,8 @@ let V={tab:"home",date:today(),sheet:null,onb:!S.profile};
 document.documentElement.dataset.theme=S.theme==="auto"?"":S.theme;
 if(!S.theme||S.theme==="auto")document.documentElement.removeAttribute("data-theme");
 const DB={foods:[],ex:[],err:null,loaded:false};
-const allFoods=()=>S.custom.concat(DB.foods.length?DB.foods:FOODS);
+const SHR={foods:[],st:"idle",at:0};
+const allFoods=()=>S.custom.concat(SHR.foods,DB.foods.length?DB.foods:FOODS);
 const byId=id=>allFoods().find(f=>f.id===id)||FOODS.find(f=>f.id===id);
 function tg(p){const t=tg0(p);if(!t)return t;const g=S.goals;return g?{...t,...g}:t}
 function tg0(p){if(!p)return null;const bmr=10*p.w+6.25*p.h-5*p.a+(p.sx==="m"?5:p.sx==="f"?-161:-78);let k=bmr*ACT[p.ac][1];
@@ -153,14 +154,14 @@ function render(){const a=document.getElementById("app"),nav=document.getElement
  a.innerHTML={home,diary,gym,prog,prof,coach}[V.tab]();const th=document.getElementById("th");if(th)th.value=S.theme||"auto";renderSheet()}
 function renderSheet(){const o=document.getElementById("ov"),s=V.sheet;if(!s){o.innerHTML="";return}if(s.g==="coach")return csheet(o);if(s.g)return gsheet(o,s);
  let h=`<div class="row sp" style="margin-bottom:8px"><b>${s.mode==="custom"?"Crear alimento":s.mode==="qty"?"Cantidad":"Añadir a "+s.meal.toLowerCase()}</b><button class="ib" data-a="close" aria-label="Cerrar">${ic("x")}</button></div>`;
- if(s.mode==="search")h+=`<input id="s" type="search" placeholder="Buscar alimento (ej. banana, pollo)" aria-label="Buscar alimento" autocomplete="off"><select id="fcat" aria-label="Categoría" style="margin-top:8px"><option value="">Todas las categorías</option>${[...new Set(allFoods().map(f=>f.cat))].sort().map(c=>`<option${V.fcat===c?" selected":""}>${esc(c)}</option>`).join("")}</select>${DB.err?'<small class="err">No se pudo cargar la base ampliada; usando la base básica.</small>':""}<div id="res"></div><button class="btn s" data-a="newfood" style="margin-top:10px">Crear un alimento propio</button><p class="t2" style="font-size:.8rem">Los valores de referencia son aproximados. Si algo no figura, podés crearlo con los datos de su etiqueta.</p>`;
- if(s.mode==="qty"){const f=s.food;h+=`<h3>${esc(f.n)}</h3><small>${f.custom?"Alimento propio":esc(f.src)}</small><div class="row" style="margin-top:8px"><input id="q" inputmode="decimal" value="${nf(s.qty,1).replace(/\./g,"")}" aria-label="Cantidad"><select id="u" aria-label="Unidad"><option value="g"${s.unit==="g"?" selected":""}>gramos</option>${f.d?`<option value="ml"${s.unit==="ml"?" selected":""}>ml</option>`:""}${f.u?`<option value="u"${s.unit==="u"?" selected":""}>${esc(f.un||"unidad")}</option>`:""}</select></div><label for="m">Comida</label><select id="m">${MEALS.map(m=>`<option${m===s.meal?" selected":""}>${m}</option>`).join("")}</select><div id="pv" class="card" style="margin-top:12px"></div><div id="qerr" class="err"></div><button class="btn" data-a="log">${s.edit?"Guardar cambios":"Registrar"}</button>`}
- if(s.mode==="custom")h+=`<label for="cn">Nombre</label><input id="cn" maxlength="60"><label for="cb">Marca (opcional)</label><input id="cb"><small class="t2">Valores cada 100 g (dejá vacío lo que no sepas)</small><div class="grid3"><div><label for="ck">kcal</label><input id="ck" inputmode="decimal"></div><div><label for="cp">Prot. g</label><input id="cp" inputmode="decimal"></div><div><label for="cc">Carb. g</label><input id="cc" inputmode="decimal"></div><div><label for="cf">Grasas g</label><input id="cf" inputmode="decimal"></div><div><label for="cu">Porción g</label><input id="cu" inputmode="decimal"></div></div><div id="cerr" class="err"></div><button class="btn" data-a="savefood" style="margin-top:12px">Guardar alimento</button>`;
+ if(s.mode==="search")h+=`<input id="s" type="search" placeholder="Buscar alimento (ej. banana, pollo)" aria-label="Buscar alimento" autocomplete="off"><select id="fcat" aria-label="Categoría" style="margin-top:8px"><option value="">Todas las categorías</option>${[...new Set(allFoods().map(f=>f.cat))].sort().map(c=>`<option${V.fcat===c?" selected":""}>${esc(c)}</option>`).join("")}</select>${DB.err?'<small class="err">No se pudo cargar la base ampliada; usando la base básica.</small>':""}${shStatus()}<div id="res"></div><button class="btn s" data-a="newfood" style="margin-top:10px">Crear un alimento propio</button><p class="t2" style="font-size:.8rem">Los valores de referencia son aproximados. Si algo no figura, podés crearlo con los datos de su etiqueta.</p>`;
+ if(s.mode==="qty"){const f=s.food;h+=`<h3>${esc(f.n)}</h3><small>${f.custom?"Alimento propio":esc(f.src)}${f.shared&&f.by?" · publicado por "+esc(f.by):""}</small>${f.shared&&f.mine?'<br><button class="t2" style="text-decoration:underline" data-a="shdel">Eliminar del catálogo compartido</button>':""}<div class="row" style="margin-top:8px"><input id="q" inputmode="decimal" value="${nf(s.qty,1).replace(/\./g,"")}" aria-label="Cantidad"><select id="u" aria-label="Unidad"><option value="g"${s.unit==="g"?" selected":""}>gramos</option>${f.d?`<option value="ml"${s.unit==="ml"?" selected":""}>ml</option>`:""}${f.u?`<option value="u"${s.unit==="u"?" selected":""}>${esc(f.un||"unidad")}</option>`:""}</select></div><label for="m">Comida</label><select id="m">${MEALS.map(m=>`<option${m===s.meal?" selected":""}>${m}</option>`).join("")}</select><div id="pv" class="card" style="margin-top:12px"></div><div id="qerr" class="err"></div><button class="btn" data-a="log">${s.edit?"Guardar cambios":"Registrar"}</button>`}
+ if(s.mode==="custom")h+=`<label for="cn">Nombre</label><input id="cn" maxlength="60"><label for="cb">Marca (opcional)</label><input id="cb"><small class="t2">Valores cada 100 g (dejá vacío lo que no sepas)</small><div class="grid3"><div><label for="ck">kcal</label><input id="ck" inputmode="decimal"></div><div><label for="cp">Prot. g</label><input id="cp" inputmode="decimal"></div><div><label for="cc">Carb. g</label><input id="cc" inputmode="decimal"></div><div><label for="cf">Grasas g</label><input id="cf" inputmode="decimal"></div><div><label for="cu">Porción g</label><input id="cu" inputmode="decimal"></div></div><label for="cg">Categoría</label><select id="cg">${[...new Set(allFoods().filter(f=>!f.shared&&!f.custom).map(f=>f.cat))].sort().concat(["Otros"]).map(c=>`<option${c==="Otros"?" selected":""}>${esc(c)}</option>`).join("")}</select>${U?'<label style="display:flex;gap:8px;align-items:center;color:var(--tx);margin-top:12px"><input type="checkbox" id="csh" style="width:auto" checked>Compartir con todos los usuarios de Nutrifit</label><small class="t2">Lo van a ver todos, con tu apodo como autor. Podés eliminarlo después.</small>':""}<div id="cerr" class="err"></div><button class="btn" data-a="savefood" style="margin-top:12px">Guardar alimento</button>`;
  o.innerHTML=`<div class="bk" data-a="bk"><div class="sheet" role="dialog" aria-modal="true">${h}</div></div>`;if(s.mode==="search"){res();const i=document.getElementById("s");i&&i.focus()}if(s.mode==="qty")pv()}
 function res(){const el=document.getElementById("res");if(!el)return;const q=norm(document.getElementById("s").value.trim()).split(/\s+/).filter(Boolean);let L;
  if(q.length){L=allFoods().filter(f=>q.every(w=>norm(f.n+" "+(f.b||"")+" "+f.cat+" "+(f.syn||"")).includes(w))).sort((a,b)=>(norm(b.n).startsWith(q[0])?1:0)-(norm(a.n).startsWith(q[0])?1:0))}
- else{const r=S.recent.map(byId).filter(Boolean);L=r.concat(S.custom.filter(c=>!r.includes(c)),FOODS.filter(f=>!r.includes(f)).slice(0,12))}
- if(V.fcat){if(!q.length)L=allFoods();L=L.filter(f=>f.cat===V.fcat)}el.innerHTML=L.length?L.slice(0,60).map(f=>`<button class="item" style="width:100%;text-align:left" data-a="pick" data-id="${f.id}"><div class="grow"><div>${esc(f.n)}${f.custom?' <span class="tag">propio</span>':""}${f.q&&f.q!=="verificado"?' <span class="tag">sin verificar</span>':""}</div><small>${esc(f.st?f.cat+" · "+f.st:(f.b||f.cat))} · P ${f.p==null?"—":nf(f.p,1)} C ${f.c==null?"—":nf(f.c,1)} G ${f.f==null?"—":nf(f.f,1)} (100 g)</small></div><b>${nf(f.k||0)} kcal</b></button>`).join(""):`<div class="empty">No encontramos “${esc(document.getElementById("s").value)}”. Probá con otra palabra o creá el alimento.</div>`}
+ else{const r=S.recent.map(byId).filter(Boolean);L=r.concat(S.custom.filter(c=>!r.includes(c)),SHR.foods.filter(c=>!r.includes(c)).slice(0,15),FOODS.filter(f=>!r.includes(f)).slice(0,12))}
+ if(V.fcat){if(!q.length)L=allFoods();L=L.filter(f=>f.cat===V.fcat)}el.innerHTML=L.length?L.slice(0,60).map(f=>`<button class="item" style="width:100%;text-align:left" data-a="pick" data-id="${f.id}"><div class="grow"><div>${esc(f.n)}${f.custom?' <span class="tag">propio</span>':""}${f.shared?' <span class="tag">compartido</span>':""}${f.q&&f.q!=="verificado"?' <span class="tag">sin verificar</span>':""}</div><small>${esc(f.st?f.cat+" · "+f.st:(f.b||f.cat))}${f.shared&&f.by?" · por "+esc(f.by):""} · P ${f.p==null?"—":nf(f.p,1)} C ${f.c==null?"—":nf(f.c,1)} G ${f.f==null?"—":nf(f.f,1)} (100 g)</small></div><b>${nf(f.k||0)} kcal</b></button>`).join(""):`<div class="empty">No encontramos “${esc(document.getElementById("s").value)}”. Probá con otra palabra o creá el alimento.</div>`}
 function pv(){const el=document.getElementById("pv");if(!el)return;const f=V.sheet.food,q=num(document.getElementById("q").value),u=document.getElementById("u").value;
  if(!q||q<=0){el.innerHTML='<small>Ingresá una cantidad mayor a 0.</small>';return}const c=calc(f,q,u);
  el.innerHTML=`<div class="row sp"><b>${nf(c.k)} kcal</b><small>${nf(c.g,0)} g</small></div><small>Proteínas ${nf(c.p,1)} g · Carbohidratos ${nf(c.c,1)} g · Grasas ${nf(c.f,1)} g</small><br><small>Estimación a partir de valores por 100 g.</small>`}
@@ -179,10 +180,18 @@ const acts={
   if(s.edit){const i=S.log.findIndex(x=>x.id===s.edit);e.date=S.log[i].date;S.log[i]=e}else S.log.push(e);
   S.recent=[s.food.id,...S.recent.filter(x=>x!==s.food.id)].slice(0,10);save();V.sheet=null;render();toast("Registrado: "+e.name)},
  copyprev(){const pr=dayLog(shift(V.date,-1));if(!pr.length)return toast("El día anterior no tiene registros");pr.forEach(e=>S.log.push({...e,id:uid(),date:V.date,t:Date.now()}));save();render();toast("Copiaste "+pr.length+" elementos")},
- savefood(){const n=document.getElementById("cn").value.trim(),g=id=>{const v=document.getElementById(id).value.trim();return v===""?null:num(v)},k=g("ck"),p=g("cp"),c=g("cc"),f=g("cf"),u=g("cu"),er=document.getElementById("cerr");
+ async savefood(){const n=document.getElementById("cn").value.trim(),g=id=>{const v=document.getElementById(id).value.trim();return v===""?null:num(v)},k=g("ck"),p=g("cp"),c=g("cc"),f=g("cf"),u=g("cu"),er=document.getElementById("cerr");
   if(!n)return er.textContent="Poné un nombre.";if(k==null||k<0||k>900)return er.textContent="Las kcal deben estar entre 0 y 900 cada 100 g.";
   if([p,c,f].some(v=>v!=null&&(v<0||v>100)))return er.textContent="Proteínas, carbohidratos y grasas deben estar entre 0 y 100 g cada 100 g.";if(u!=null&&u<=0)return er.textContent="La porción debe ser mayor a 0.";
-  const fo={id:"c"+uid(),n,b:document.getElementById("cb").value.trim(),cat:"Propios",k,p,c,f,d:0,u:u||0,un:"porción",custom:true,src:"Alimento propio"};S.custom.unshift(fo);save();V.sheet={mode:"qty",meal:V.sheet.meal,food:fo,qty:100,unit:"g"};render()},
+  const cat=document.getElementById("cg").value,brand=document.getElementById("cb").value.trim().slice(0,60),shEl=document.getElementById("csh"),share=!!(U&&shEl&&shEl.checked);
+  if(share){if(n.length<2)return er.textContent="El nombre debe tener al menos 2 letras para compartirlo.";if(SHR.foods.some(x=>nk(x.n,x.b)===nk(n,brand)))return er.textContent="Ya existe en el catálogo compartido. Buscalo (si no aparece, tocá «Actualizar» en el buscador).";
+   if(!brand&&allFoods().some(x=>!x.shared&&!x.custom&&norm(x.n)===norm(n))&&!confirm("Ya hay un alimento con ese nombre en la base de Nutrifit. ¿Publicarlo igual?"))return;
+   const bt=document.querySelector('[data-a="savefood"]');bt.disabled=true;er.textContent="Publicando…";
+   try{const by=((S.profile&&S.profile.nm)||"Usuario de Nutrifit").slice(0,40);const{data,error}=await SB.from("shared_foods").insert({name:n,brand:brand||null,category:cat,kcal:k,protein_g:p,carbs_g:c,fat_g:f,portion_g:u,creator_name:by}).select().single();if(error)throw error;
+    const sf=shFood(data);SHR.foods.unshift(sf);V.sheet={mode:"qty",meal:V.sheet.meal,food:sf,qty:100,unit:"g"};render();toast("Publicado en el catálogo compartido")}
+   catch(e){bt.disabled=false;er.textContent=e&&e.code==="23505"?"Ese alimento ya existe en el catálogo compartido.":navigator.onLine?"No se pudo publicar. Probá de nuevo, o destildá «Compartir» para guardarlo solo para vos.":"Sin conexión: no se pudo publicar. Probá cuando vuelva, o guardalo solo para vos."}
+   return}
+  const fo={id:"c"+uid(),n,b:brand,cat:cat==="Otros"?"Propios":cat,k,p,c,f,d:0,u:u||0,un:"porción",custom:true,src:"Alimento propio"};S.custom.unshift(fo);save();V.sheet={mode:"qty",meal:V.sheet.meal,food:fo,qty:100,unit:"g"};render()},
  myfoods(){V.sheet={mode:"search",meal:guess()};render();document.getElementById("s").value="";},
  addw(){const v=num(document.getElementById("wk").value);if(!v||v<25||v>400)return document.getElementById("werr").textContent="Ingresá un peso válido en kg.";S.weights.push({date:today(),kg:v});S.profile.w=v;save();render();toast("Peso guardado")},
  saveonb(){const g=id=>document.getElementById(id).value,a=num(g("ag")),h=num(g("ht")),w=num(g("wt")),er=document.getElementById("oerr");
@@ -305,16 +314,6 @@ async function pull(){const{data,error}=await SB.from("user_data").select("data,
 function backup(d){try{localStorage.setItem("nutri-conflict-"+U.id+"-"+Date.now(),JSON.stringify(d))}catch(e){}}
 function adopt(r){S={...D0(),...r.data};base=r.updated_at;try{localStorage.setItem(K,JSON.stringify(S));localStorage.removeItem(dk())}catch(e){}sy("ok")}
 async function push(force){if(!U||PB)return;PB=true;sy("sync");const uid=U.id,snap=JSON.stringify(S);let ok=true,nb=null;
-324
-325
-326
-327
-328
-329
-330
-331
-332
-
  try{if(base===null){const{data,error}=await SB.from("user_data").insert({user_id:uid,data:JSON.parse(snap)}).select("updated_at").single();if(error){if(error.code==="23505")ok=false;else throw error}else nb=data.updated_at}
  else{let q=SB.from("user_data").update({data:JSON.parse(snap)}).eq("user_id",uid);if(!force)q=q.eq("updated_at",base);const{data,error}=await q.select("updated_at");if(error)throw error;if(data.length)nb=data[0].updated_at;else ok=false}
  if(ok){base=nb;if(JSON.stringify(S)===snap){localStorage.removeItem(dk());sy("ok")}else queue()}
@@ -335,8 +334,8 @@ async function onUser(u){if(U&&U.id===u.id)return;U=u;K="nutri-u-"+u.id;base=nul
    else if(hasData(anon)&&confirm("Encontramos datos guardados en este dispositivo sin cuenta ("+summ(anon)+"). ¿Querés importarlos a tu cuenta? Tus datos locales NO se borran.")){S={...D0(),...anon};try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}await push();const v=await pull();toast(v&&v.data.log.length===S.log.length?"Importación verificada: "+summ(S):"No pudimos verificar la importación. Tus datos locales siguen intactos.")}
    else{S=D0();await push()}}
  }catch(e){sy("err","No se pudo conectar. Trabajás con la copia de este dispositivo y se sincroniza al volver la conexión.")}
- V.onb=!S.profile;render()}
-function onOut(){clearTimeout(QT);U=null;base=null;K="nutri-none";S=D0();window._undo=null;document.getElementById("toast").innerHTML="";document.getElementById("ov").innerHTML="";V={tab:"home",date:today(),sheet:null,onb:false,gate:true,load:0};sy("idle");render()}
+ V.onb=!S.profile;render();loadShared()}
+function onOut(){clearTimeout(QT);U=null;base=null;K="nutri-none";S=D0();SHR.foods=[];SHR.st="idle";SHR.at=0;window._undo=null;document.getElementById("toast").innerHTML="";document.getElementById("ov").innerHTML="";V={tab:"home",date:today(),sheet:null,onb:false,gate:true,load:0};sy("idle");render()}
 const em=()=>(document.getElementById("ae")||{value:""}).value.trim(),pw=()=>(document.getElementById("ap")||{value:""}).value;
 const aerr=m=>{const e=document.getElementById("aerr");if(e)e.textContent=m};
 const busy=b=>document.querySelectorAll("#app button").forEach(x=>x.disabled=b);
@@ -371,5 +370,19 @@ function boot(){const local=localStorage.getItem("nutri-mode-local")==="1";
  SB.auth.onAuthStateChange((ev,ses)=>{setTimeout(()=>{if(ev==="PASSWORD_RECOVERY"){V.recov=true;V.load=0;render();return}
   if(ses&&ses.user)onUser(ses.user);else if(ev==="SIGNED_OUT")onOut();else if(ev==="INITIAL_SESSION"&&V.gate){V.load=0;render()}},0)});
  addEventListener("online",queue);render()}
+/* ===== NUTRIFIT: catálogo compartido (tabla public.shared_foods) ===== */
+const nk=(n,b)=>norm(n).replace(/\s+/g," ").trim()+"|"+norm(b||"").replace(/\s+/g," ").trim();
+const shFood=r=>({id:"s"+r.id,sid:r.id,n:r.name,b:r.brand||"",cat:r.category,k:r.kcal,p:r.protein_g,c:r.carbs_g,f:r.fat_g,d:r.density_g_ml||0,u:r.portion_g||0,un:r.portion_label||"porción",shared:true,mine:!!U&&r.created_by===U.id,by:r.creator_name||"",q:"comunitario",src:"Catálogo compartido"});
+function shStatusInner(){if(!U)return"";return SHR.st==="loading"?"Cargando catálogo compartido…":SHR.st==="err"?'<span class="err">No se pudo cargar el catálogo compartido.</span> <button class="t2" style="text-decoration:underline" data-a="shload">Reintentar</button>':SHR.st==="ok"?"Catálogo compartido: "+SHR.foods.length+' alimentos · <button class="t2" style="text-decoration:underline" data-a="shload">Actualizar</button>':""}
+const shStatus=()=>`<div id="shs" class="t2" style="font-size:.8rem;margin:6px 0">${shStatusInner()}</div>`;
+function shRefresh(){const e=document.getElementById("shs");if(e)e.innerHTML=shStatusInner();if(document.getElementById("res")&&document.getElementById("s"))res()}
+async function loadShared(){if(!U||!SB||SHR.st==="loading")return;SHR.st="loading";shRefresh();
+ try{const r=await Promise.race([SB.from("shared_foods").select("*").eq("status","published").order("created_at",{ascending:false}).limit(1000),new Promise((_,j)=>setTimeout(()=>j(new Error("timeout")),12000))]);if(r.error)throw r.error;SHR.foods=r.data.map(shFood);SHR.st="ok";SHR.at=Date.now()}catch(e){SHR.st="err"}
+ shRefresh()}
+{const _add=acts.add;acts.add=d=>{_add(d);if(U&&Date.now()-SHR.at>120000)loadShared()}}
+Object.assign(acts,{shload(){loadShared()},
+ async shdel(){const f=V.sheet.food;if(!f.sid||!confirm("¿Eliminar «"+f.n+"» del catálogo compartido? Lo que ya registraste conserva sus valores."))return;
+  try{const{error}=await SB.from("shared_foods").delete().eq("id",f.sid);if(error)throw error;SHR.foods=SHR.foods.filter(x=>x.sid!==f.sid);V.sheet={mode:"search",meal:V.sheet.meal};render();toast("Eliminado del catálogo compartido")}catch(e){toast("No se pudo eliminar. Probá de nuevo.")}}});
+
 loadDB();boot();
 </script></body></html>
